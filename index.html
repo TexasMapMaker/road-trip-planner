@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#10243b">
+  <meta name="theme-color" content="#0b1220">
   <meta name="description" content="Free personal road-trip fuel cost planner with a destination map.">
   <title>Waypoint | Road Trip Cost Planner</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
@@ -31,6 +31,51 @@
     .leaflet-popup-content{line-height:1.5}.leaflet-popup-content button{margin-top:7px}.fileinput{display:none}.toast{position:fixed;right:20px;bottom:20px;background:#17344a;color:white;border-radius:9px;padding:13px 16px;box-shadow:0 8px 26px #0003;z-index:9999;max-width:370px;display:none}
     @media(max-width:900px){.controls,.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.main{grid-template-columns:1fr}.side{min-height:0}#map{height:380px}}
     @media(max-width:520px){.shell{padding:12px}.header{padding:15px}.stat{padding:13px}.stat-val{font-size:23px}.setting{padding:12px}.filters input{width:100%}.filters{width:100%}.filters select{flex:1}.form-grid{gap:8px}}
+
+    /* Waypoint dark theme: presentation-only changes, existing saved data is unchanged. */
+    :root{color-scheme:dark;color:#e5edf7;background:#0b1220}
+    body{background:#0b1220;color:#e5edf7}
+    .header{background:#080f1d;border-bottom:1px solid #26374d}
+    .brand span{color:#69c9f2}.sub{color:#99b4cc}
+    .shell{color:#e5edf7}
+    .hint,.muted,.foot,.map-note,.field .help{color:#9ab0c6}
+    .card{background:#152236;border-color:#2a3b52;box-shadow:0 5px 18px rgba(0,0,0,.16)}
+    .setting label,.stat-label,th{color:#a6bbd0}
+    .stat-note,.meta{color:#8fa9c1}
+    input,select{background:#0d1829;color:#eff6ff;border-color:#40526b}
+    input::placeholder{color:#849bb1;opacity:1}
+    input:focus,select:focus{outline-color:#63c6f3;border-color:#63c6f3}
+    .btn{background:#233650;border-color:#405571;color:#e8f3ff}
+    .btn:hover{background:#304663}
+    .btn.primary{background:#087fb5;border-color:#2299cf;color:#fff}
+    .btn.primary:hover{background:#086b9a}
+    .btn.ghost{background:#1c3047;color:#f1f7ff;border-color:#536b85}
+    .btn.ghost:hover{background:#2b4868}
+    .btn.danger{color:#ff929b}
+    .linkbtn{color:#75d1ff}.linkbtn:hover{color:#bbeeff}
+    .smalltag{color:#9bdaff;background:#183b55}
+    .map-note{border-top-color:#2a3b52}
+    #map{background:#12253a}
+    /* Darken the existing OSM basemap without changing tile provider or API requirements. */
+    .leaflet-tile-pane{filter:grayscale(0.25) invert(1) hue-rotate(180deg) brightness(.75) contrast(1.12)}
+    .leaflet-container{background:#101e30;color:#e5edf7}
+    .leaflet-control-zoom a,.leaflet-control-layers{background:#17263a;color:#e5edf7;border-color:#3c5069}
+    .leaflet-control-zoom a:hover{background:#274059;color:#fff}
+    .leaflet-bar{border-color:#344b65}
+    .leaflet-control-attribution{background:rgba(12,22,37,.88)!important;color:#c2d3e4!important}
+    .leaflet-control-attribution a{color:#88d9ff!important}
+    .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#1b2c42;color:#e8f2fc}
+    .leaflet-popup-content a{color:#8ddcff}
+    .leaflet-popup-close-button{color:#cedfeb!important}
+    th{border-bottom-color:#40516a}
+    td{border-bottom-color:#2a3b52}
+    tbody tr:hover{background:#213249}
+    .ok{background:#173d31;color:#88e2ae}
+    .over{background:#4b2b25;color:#ffb18e}
+    .empty{color:#9ab0c6}
+    .toast{background:#263d59;color:#f4faff;border:1px solid #54708d}
+    .foot a{color:#8bd9ff}
+    ::selection{background:#155a80;color:#fff}
   </style>
 </head>
 <body>
