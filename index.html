@@ -76,12 +76,17 @@
     .toast{background:#263d59;color:#f4faff;border:1px solid #54708d}
     .foot a{color:#8bd9ff}
     ::selection{background:#155a80;color:#fff}
+    .publishbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#112a42;border:1px solid #315674;border-radius:12px;padding:13px 17px;margin-bottom:14px}
+    .publishbar strong{color:#c1e9ff}.publishbar .hint{margin-top:5px}
+    .publishbar .btn{width:auto;text-decoration:none}
+    @media(max-width:520px){.publishbar .btn{width:100%;text-align:center}}
   </style>
 </head>
 <body>
-<header class="header"><div><div class="brand">✦ WAY<span>POINT</span></div><div class="sub">Your destinations. Your mileage. Your budget.</div></div><div class="header-actions"><button class="btn ghost" id="exportBtn" type="button">↓ Export GeoJSON</button><button class="btn ghost" id="importBtn" type="button">↑ Import Locations</button><input id="fileInput" class="fileinput" type="file" accept=".geojson,.json,.kml,.csv"></div></header>
+<header class="header"><div><div class="brand">✦ WAY<span>POINT</span></div><div class="sub">Your destinations. Your mileage. Your budget.</div></div><div class="header-actions"><button class="btn ghost" id="exportBtn" type="button">↓ Export for GitHub</button><button class="btn ghost" id="resetDraftBtn" type="button">↻ Reload published</button><button class="btn ghost" id="importBtn" type="button">↑ Import Locations</button><input id="fileInput" class="fileinput" type="file" accept=".geojson,.json,.kml,.csv"></div></header>
 <main class="shell">
   <div class="topline"><div><h1>Road Trip Cost Planner</h1><div class="hint">Plan every stop at a glance. All costs are round-trip estimates.</div></div><div class="smalltag">FREE PERSONAL PLANNER</div></div>
+  <section class="publishbar" aria-live="polite"><div><strong id="publishStatus">Loading published destinations…</strong><div class="hint" id="publishHelp">The GitHub GeoJSON file is the public master list. Edits made here are local drafts.</div></div><a class="btn" id="githubLink" href="#" target="_blank" rel="noopener" hidden>Open GitHub repository</a></section>
   <section class="controls" aria-label="Fuel settings">
     <div class="card setting"><label for="mpg">Fuel economy · MPG</label><input id="mpg" type="number" min="0.1" max="200" step="0.1" value="10"></div>
     <div class="card setting"><label for="gas">Gas price · $/gallon</label><input id="gas" type="number" min="0" max="100" step="0.01" value="3.00"></div>
@@ -104,27 +109,63 @@
         <div class="field"><label for="notes">Notes</label><input id="notes" maxlength="300" placeholder="Scenery, campground, ideas..."></div>
         <div class="form-actions"><button class="btn primary" id="saveBtn" type="submit">Save destination</button><button class="btn" id="cancelBtn" type="button">Clear</button><button class="btn danger" id="deleteBtn" type="button" hidden>Delete</button></div>
       </form>
-      <p class="hint" style="margin-top:19px">Tip: Zoom to a spot and click the map to fill in its coordinates, then enter a name and estimated mileage. Data is saved locally in this browser.</p>
+      <p class="hint" style="margin-top:19px">Tip: Zoom to a spot and click the map to fill in its coordinates, then enter a name and estimated mileage. Changes are local drafts until you export destinations.geojson and commit that file on GitHub. Visitors cannot change the published list.</p>
     </aside>
   </section>
   <section class="card table-card"><div class="table-head"><div><h2 style="margin:0">Destination comparison</h2><div class="hint">Fuel gallons and cost recalculate immediately when settings change.</div></div><div class="filters"><input id="search" type="search" placeholder="Search destinations..." aria-label="Search destinations"><select id="filter" aria-label="Filter by cost"><option value="all">All destinations</option><option value="within">Within budget</option><option value="over">Over budget</option></select><select id="sort" aria-label="Sort destinations"><option value="cost">Lowest cost first</option><option value="costDesc">Highest cost first</option><option value="name">Name A–Z</option><option value="miles">Shortest trip first</option></select></div></div>
     <div class="tablewrap"><table><thead><tr><th>Destination</th><th class="num">Round trip miles</th><th class="num">Gallons</th><th class="num">Fuel cost</th><th>Budget</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div><p class="hint" style="margin:12px 0 0">Estimates exclude tolls, overnight stays, campsite fees and changes in fuel economy or gas prices along the route.</p></section>
-  <div class="foot">Waypoint is a static, no-account app. Your destinations and settings are stored in your browser only. Export regular backups. <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap attribution</a>.</div>
+  <div class="foot">Published destinations are loaded from destinations.geojson in the same GitHub repository. Browser edits are local drafts, not public changes. Fuel settings stay on this device. <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap attribution</a>.</div>
 </main><div class="toast" role="status" id="toast"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
 <script>
 'use strict';
-const STORE = 'waypoint-destinations-v1', SETTINGS = 'waypoint-settings-v1';
+const LEGACY_STORE = 'waypoint-destinations-v1', DRAFT_STORE = 'waypoint-draft-v2', SETTINGS = 'waypoint-settings-v1';
+const MASTER_FILE = 'destinations.geojson';
 const $=id=>document.getElementById(id);
 const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(n);
 const fmt=n=>new Intl.NumberFormat('en-US',{maximumFractionDigits:1}).format(n);
 function safeText(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function uniqueId(){return typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():String(Date.now())+'-'+Math.random().toString(36).slice(2)}
-let destinations=[],editingId=null,markers;
-try{const data=JSON.parse(localStorage.getItem(STORE)||'[]');if(Array.isArray(data))destinations=data.filter(isValidDestination);}catch(e){console.warn('Destination storage unavailable',e)}
+let destinations=[],editingId=null,markers,masterDestinations=[],hasDraft=false,masterLoaded=false;
 try{const s=JSON.parse(localStorage.getItem(SETTINGS)||'{}');for(const k of ['mpg','gas','budget','tripType'])if(s[k]!==undefined)$(k).value=s[k];}catch(e){console.warn('Settings storage unavailable',e)}
-function isValidDestination(d){return d&&typeof d.name==='string'&&Number.isFinite(Number(d.lat))&&Math.abs(Number(d.lat))<=90&&Number.isFinite(Number(d.lng))&&Math.abs(Number(d.lng))<=180&&Number.isFinite(Number(d.mileage))&&Number(d.mileage)>=0;}
-function persist(){try{localStorage.setItem(STORE,JSON.stringify(destinations));localStorage.setItem(SETTINGS,JSON.stringify(Object.fromEntries(['mpg','gas','budget','tripType'].map(k=>[k,$(k).value]))));}catch(e){notify('Saving in this browser failed. Export a backup of your data.');}}
+function isValidDestination(d){return d&&typeof d.name==='string'&&d.name.trim()!==''&&Number.isFinite(Number(d.lat))&&Math.abs(Number(d.lat))<=90&&Number.isFinite(Number(d.lng))&&Math.abs(Number(d.lng))<=180&&Number.isFinite(Number(d.mileage))&&Number(d.mileage)>=0;}
+function persistSettings(){try{localStorage.setItem(SETTINGS,JSON.stringify(Object.fromEntries(['mpg','gas','budget','tripType'].map(k=>[k,$(k).value]))));}catch(e){console.warn('Settings storage unavailable',e)}}
+function updatePublishStatus(){
+  $('publishStatus').textContent=hasDraft?'Unpublished changes on this browser':masterLoaded?'Viewing published destinations':'Published destinations unavailable';
+  $('publishHelp').textContent=hasDraft?'Export for GitHub and replace destinations.geojson to publish. Or reload published to discard this draft.':masterLoaded?'Loaded from destinations.geojson on GitHub Pages. Edits here will create a local draft.':'Could not load destinations.geojson. Check GitHub Pages and the file name; no published data has been erased.';
+  $('resetDraftBtn').disabled=!hasDraft&&!masterLoaded;
+}
+function persist(){
+  hasDraft=true;
+  try{localStorage.setItem(DRAFT_STORE,JSON.stringify(destinations));}catch(e){notify('Local draft could not be saved. Export your data immediately.');}
+  updatePublishStatus();
+}
+function fitDestinations(){if(destinations.length){const bounds=L.latLngBounds(destinations.map(d=>[d.lat,d.lng]));map.fitBounds(bounds.pad(.15),{maxZoom:9});}}
+async function loadPublished(){
+  try{
+    const response=await fetch(MASTER_FILE,{cache:'no-store'});
+    if(!response.ok)throw Error('HTTP '+response.status);
+    const parsed=await response.json();
+    if(parsed?.type!=='FeatureCollection'||!Array.isArray(parsed.features))throw Error('Invalid GeoJSON FeatureCollection');
+    const published=fromGeoJSON(parsed).filter(isValidDestination);
+    if(published.length!==parsed.features.length)throw Error('Published file contains unsupported or invalid features');
+    masterDestinations=published;masterLoaded=true;
+  }catch(err){console.warn('Could not load published list',err);masterLoaded=false;}
+  // One-time migration: do not silently discard destinations saved by the old Waypoint version.
+  try{
+    const draft=localStorage.getItem(DRAFT_STORE);
+    if(draft!==null){const data=JSON.parse(draft);if(Array.isArray(data)&&data.every(isValidDestination)){destinations=data;hasDraft=true;}}
+    else{
+      const legacy=JSON.parse(localStorage.getItem(LEGACY_STORE)||'[]');
+      if(Array.isArray(legacy)&&legacy.length&&legacy.every(isValidDestination)){
+        destinations=legacy;hasDraft=true;localStorage.setItem(DRAFT_STORE,JSON.stringify(legacy));
+        notify('Your previous browser locations were recovered as a local draft. Export for GitHub to publish them.');
+      }
+    }
+  }catch(err){console.warn('Could not load local draft',err)}
+  if(!hasDraft)destinations=masterDestinations.map(d=>({...d}));
+  updatePublishStatus();render();fitDestinations();
+}
 let toastTimer;function notify(message){$('toast').textContent=message;$('toast').style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').style.display='none',4200)}
 const map=L.map('map',{zoomControl:true}).setView([31.1,-99.2],6);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
@@ -146,22 +187,23 @@ markers.clearLayers();for(const x of costs){const affordable=valid&&x.cost<=s.bu
 function resetForm(){$('destinationForm').reset();editingId=null;$('formTitle').textContent='Add a destination';$('saveBtn').textContent='Save destination';$('deleteBtn').hidden=true;}
 function editDestination(id){const d=destinations.find(x=>x.id===id);if(!d)return;editingId=id;for(const k of ['name','category','mileage','lat','lng','notes'])$(k).value=d[k]??'';$('formTitle').textContent='Edit destination';$('saveBtn').textContent='Update destination';$('deleteBtn').hidden=false;if(window.innerWidth<900)$('destinationForm').scrollIntoView({behavior:'smooth',block:'center'});}
 function zoomTo(id){const d=destinations.find(x=>x.id===id);if(d){map.setView([d.lat,d.lng],11);for(const layer of markers.getLayers())if(layer.getLatLng().lat===Number(d.lat)&&layer.getLatLng().lng===Number(d.lng)){layer.openPopup();break;}}}
-$('destinationForm').addEventListener('submit',e=>{e.preventDefault();const d={id:editingId||uniqueId(),name:$('name').value.trim(),category:$('category').value,mileage:Number($('mileage').value),lat:Number($('lat').value),lng:Number($('lng').value),notes:$('notes').value.trim()};if(!d.name||!isValidDestination(d)){notify('Enter a name, valid coordinates, and nonnegative mileage.');return;}const idx=destinations.findIndex(x=>x.id===editingId);if(idx>=0)destinations[idx]=d;else destinations.push(d);persist();render();resetForm();map.setView([d.lat,d.lng],Math.max(map.getZoom(),8));notify('Destination saved in this browser.');});
+$('destinationForm').addEventListener('submit',e=>{e.preventDefault();const d={id:editingId||uniqueId(),name:$('name').value.trim(),category:$('category').value,mileage:Number($('mileage').value),lat:Number($('lat').value),lng:Number($('lng').value),notes:$('notes').value.trim()};if(!d.name||!isValidDestination(d)){notify('Enter a name, valid coordinates, and nonnegative mileage.');return;}const idx=destinations.findIndex(x=>x.id===editingId);if(idx>=0)destinations[idx]=d;else destinations.push(d);persist();render();resetForm();map.setView([d.lat,d.lng],Math.max(map.getZoom(),8));notify('Local draft saved. Export for GitHub to publish.');});
 $('cancelBtn').addEventListener('click',resetForm);$('newBtn').addEventListener('click',resetForm);
-$('deleteBtn').addEventListener('click',()=>{if(!editingId)return;const d=destinations.find(x=>x.id===editingId);if(d&&confirm(`Delete "${d.name}"?`)){destinations=destinations.filter(x=>x.id!==editingId);persist();render();resetForm();notify('Destination deleted.');}});
+$('deleteBtn').addEventListener('click',()=>{if(!editingId)return;const d=destinations.find(x=>x.id===editingId);if(d&&confirm(`Delete "${d.name}"?`)){destinations=destinations.filter(x=>x.id!==editingId);persist();render();resetForm();notify('Deleted in local draft. Export to publish.');}});
 $('rows').addEventListener('click',e=>{const el=e.target.closest('[data-edit],[data-zoom]');if(!el)return;if(el.dataset.edit)editDestination(el.dataset.edit);else zoomTo(el.dataset.zoom);});
 document.addEventListener('click',e=>{const el=e.target.closest('[data-popup-edit]');if(el){editDestination(el.dataset.popupEdit);map.closePopup();}});
-for(const k of ['mpg','gas','budget','tripType'])$(k).addEventListener('input',()=>{persist();render();});for(const k of ['filter','search','sort'])$(k).addEventListener('input',render);
+for(const k of ['mpg','gas','budget','tripType'])$(k).addEventListener('input',()=>{persistSettings();render();});for(const k of ['filter','search','sort'])$(k).addEventListener('input',render);
 function download(name,text,mime){const blob=new Blob([text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
-$('exportBtn').addEventListener('click',()=>{const fc={type:'FeatureCollection',properties:{application:'Waypoint',mileageType:$('tripType').value,mpg:Number($('mpg').value),gas:Number($('gas').value),budget:Number($('budget').value)},features:destinations.map(d=>({type:'Feature',geometry:{type:'Point',coordinates:[Number(d.lng),Number(d.lat)]},properties:{name:d.name,category:d.category,mileage:Number(d.mileage),notes:d.notes||''}}))};download('waypoint-destinations.geojson',JSON.stringify(fc,null,2),'application/geo+json');notify('GeoJSON backup exported.');});
+$('exportBtn').addEventListener('click',()=>{const fc={type:'FeatureCollection',features:destinations.map(d=>({type:'Feature',geometry:{type:'Point',coordinates:[Number(d.lng),Number(d.lat)]},properties:{id:d.id,name:d.name,category:d.category,mileage:Number(d.mileage),notes:d.notes||''}}))};download(MASTER_FILE,JSON.stringify(fc,null,2)+'\n','application/geo+json');notify('Downloaded destinations.geojson. Upload and commit it to GitHub to publish.');});
 $('importBtn').addEventListener('click',()=>$('fileInput').click());
 function getProp(props,...keys){for(const k of keys){const key=Object.keys(props||{}).find(x=>x.toLowerCase()===k.toLowerCase());if(key!==undefined&&props[key]!==undefined)return props[key];}return undefined;}
-function toDestination(name,lat,lng,props={}){const value=Number(getProp(props,'mileage','miles','round_trip_miles')??0);return {id:uniqueId(),name:String(name||'Imported location').slice(0,120),lat:Number(lat),lng:Number(lng),mileage:Number.isFinite(value)&&value>=0?value:0,category:String(getProp(props,'category')||'Other').slice(0,60),notes:String(getProp(props,'notes','description')||'').slice(0,300)};}
+function toDestination(name,lat,lng,props={}){const value=Number(getProp(props,'mileage','miles','round_trip_miles')??0);return {id:String(getProp(props,'id')||uniqueId()).slice(0,120),name:String(name||'Imported location').slice(0,120),lat:Number(lat),lng:Number(lng),mileage:Number.isFinite(value)&&value>=0?value:0,category:String(getProp(props,'category')||'Other').slice(0,60),notes:String(getProp(props,'notes','description')||'').slice(0,300)};}
 function fromGeoJSON(parsed){let features=parsed.type==='FeatureCollection'?parsed.features:parsed.type==='Feature'?[parsed]:[];const result=[];for(const f of features){if(f?.geometry?.type!=='Point')continue;const c=f.geometry.coordinates,props=f.properties||{};if(!Array.isArray(c)||c.length<2)continue;result.push(toDestination(getProp(props,'name','title')||'Imported point',c[1],c[0],props));}return result;}
 function fromKML(raw){const xml=new DOMParser().parseFromString(raw,'application/xml');if(xml.getElementsByTagName('parsererror').length)throw Error('Invalid KML XML');const list=[];for(const pm of Array.from(xml.getElementsByTagNameNS('*','Placemark'))){const point=pm.getElementsByTagNameNS('*','Point')[0],coord=point?.getElementsByTagNameNS('*','coordinates')[0]?.textContent?.trim();if(!coord)continue;const [lng,lat]=coord.split(/[,\s]+/).map(Number);const name=pm.getElementsByTagNameNS('*','name')[0]?.textContent||'Imported KML point';const description=pm.getElementsByTagNameNS('*','description')[0]?.textContent||'';list.push(toDestination(name,lat,lng,{description}));}return list;}
 function csvRows(text){const out=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){let c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')quoted=false;else cell+=c;}else if(c==='"')quoted=true;else if(c===','){row.push(cell);cell='';}else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(v=>v!==''))out.push(row);row=[];cell='';}else cell+=c;}row.push(cell);if(row.some(v=>v!==''))out.push(row);return out;}
 function fromCSV(text){const rows=csvRows(text.replace(/^\uFEFF/,''));if(rows.length<2)return[];const heads=rows.shift().map(x=>x.trim().toLowerCase());const col=(r,...names)=>{for(const n of names){const pos=heads.indexOf(n);if(pos>=0)return r[pos];}return undefined;};return rows.map(r=>toDestination(col(r,'name','title','destination'),col(r,'lat','latitude','y'),col(r,'lng','lon','longitude','x'),{mileage:col(r,'mileage','miles','round_trip_miles'),category:col(r,'category'),notes:col(r,'notes','description')}));}
-$('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const raw=await file.text(),ext=file.name.split('.').pop().toLowerCase();const imported=ext==='kml'?fromKML(raw):ext==='csv'?fromCSV(raw):fromGeoJSON(JSON.parse(raw));const valid=imported.filter(isValidDestination);if(!valid.length)throw Error('No valid point locations found. Check the file format and coordinates.');if(!confirm(`Import ${valid.length} location(s)? They will be added to your existing destinations. Imported mileage defaults to 0 when missing.`))return;destinations.push(...valid);persist();render();const bounds=L.latLngBounds(valid.map(d=>[d.lat,d.lng]));map.fitBounds(bounds.pad(.18),{maxZoom:10});notify(`${valid.length} location(s) imported. Edit any missing mileage.`);}catch(err){notify('Import failed: '+err.message);}finally{e.target.value='';}});
-render();if(destinations.length){const bounds=L.latLngBounds(destinations.map(d=>[d.lat,d.lng]));map.fitBounds(bounds.pad(.15),{maxZoom:9});}
+$('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const raw=await file.text(),ext=file.name.split('.').pop().toLowerCase();const imported=ext==='kml'?fromKML(raw):ext==='csv'?fromCSV(raw):fromGeoJSON(JSON.parse(raw));const valid=imported.filter(isValidDestination);if(!valid.length)throw Error('No valid point locations found. Check the file format and coordinates.');if(!confirm(`Import ${valid.length} location(s)? They will be added to your existing destinations. Imported mileage defaults to 0 when missing.`))return;const existing=new Set(destinations.map(d=>d.id));for(const d of valid){if(existing.has(d.id))d.id=uniqueId();existing.add(d.id);destinations.push(d);}persist();render();const bounds=L.latLngBounds(valid.map(d=>[d.lat,d.lng]));map.fitBounds(bounds.pad(.18),{maxZoom:10});notify(`${valid.length} location(s) imported. Edit any missing mileage.`);}catch(err){notify('Import failed: '+err.message);}finally{e.target.value='';}});
+$('resetDraftBtn').addEventListener('click',()=>{if(hasDraft&&!confirm('Discard your unpublished local changes and reload the published GitHub destinations? Export a backup first if you want to keep them.'))return;try{localStorage.removeItem(DRAFT_STORE);localStorage.removeItem(LEGACY_STORE);}catch(e){}hasDraft=false;destinations=masterDestinations.map(d=>({...d}));resetForm();render();updatePublishStatus();fitDestinations();loadPublished().then(()=>notify(masterLoaded?'Refreshed the published destination list.':'Could not refresh the published file.'));});
+updatePublishStatus();loadPublished();
 </script>
 </body></html>
