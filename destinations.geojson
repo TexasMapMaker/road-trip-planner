@@ -34,6 +34,57 @@
         "mileage": 196.2,
         "notes": ""
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -94.873965,
+          29.24077
+        ]
+      },
+      "properties": {
+        "id": "6552faf2-872b-4b9b-b7d1-42af6dd857f7",
+        "name": "Dellanera RV Park",
+        "category": "Campground",
+        "mileage": 298,
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -100.417296,
+          29.30848
+        ]
+      },
+      "properties": {
+        "id": "33a6cff6-db65-4beb-b2ed-a19b67b9e85b",
+        "name": "Fort Clark Springs",
+        "category": "Campground",
+        "mileage": 774,
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -98.044374,
+          32.807748
+        ]
+      },
+      "properties": {
+        "id": "54cfcd25-f5ae-43a7-ba0f-99db61b07fe6",
+        "name": "Lake Mineral Wells SP",
+        "category": "State park",
+        "mileage": 746,
+        "notes": ""
+      }
     }
   ]
 }
