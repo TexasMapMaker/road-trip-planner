@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10243b">
+  <meta name="description" content="Free personal road-trip fuel cost planner with a destination map.">
+  <title>Waypoint | Road Trip Cost Planner</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#17314a;background:#edf2f6;font-size:14px}
+    *{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}
+    .header{background:#10243b;color:white;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .brand{font-weight:800;font-size:24px;letter-spacing:-.8px}.brand span{color:#67c8e8}.sub{color:#9fb8cb;font-size:12px;margin-top:4px}
+    .header-actions{display:flex;gap:8px;flex-wrap:wrap}.btn{background:#fff;border:1px solid #d5e1eb;color:#17314a;padding:10px 13px;border-radius:9px;font-weight:650;white-space:nowrap}
+    .btn:hover{background:#edf6fd}.btn.primary{background:#1286bb;border-color:#1286bb;color:#fff}.btn.primary:hover{background:#086f9d}.btn.ghost{background:transparent;color:#fff;border-color:#55718a}.btn.danger{color:#b2383d}
+    .shell{max-width:1550px;margin:auto;padding:19px 22px 36px}.topline{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:15px;flex-wrap:wrap}
+    h1{font-size:20px;letter-spacing:-.45px;margin:0}h2{font-size:16px;margin:0 0 12px}p{line-height:1.5}.hint{font-size:12px;color:#63778a}.card{background:#fff;border:1px solid #dce5ee;border-radius:14px;box-shadow:0 3px 14px rgba(35,68,97,.035)}
+    .controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.setting{padding:14px 16px}.setting label{display:block;font-size:11px;color:#6d8091;font-weight:800;text-transform:uppercase;letter-spacing:.65px;margin-bottom:9px}
+    input,select{background:#fff;border:1px solid #cbd8e4;border-radius:8px;padding:9px 10px;width:100%;color:#17314a;min-height:39px}input:focus,select:focus{outline:2px solid #69bbe2;outline-offset:1px}
+    .setting input{font-size:18px;font-weight:750;max-width:100%}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.stat{padding:18px}
+    .stat-label{font-size:12px;color:#63798b;font-weight:650}.stat-val{font-size:27px;font-weight:850;letter-spacing:-1px;margin-top:6px}.stat-note{font-size:12px;color:#72889a;margin-top:3px}
+    .main{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(335px,.7fr);gap:14px;margin-bottom:15px}.map-card{overflow:hidden}.section-head{padding:15px 17px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+    #map{height:440px;background:#dae8ef}.map-note{padding:12px 16px;border-top:1px solid #e3eaf0;color:#667d90;font-size:12px}.side{padding:18px;min-height:440px}
+    .smalltag{color:#147da8;background:#eaf7fb;font-size:11px;padding:5px 8px;border-radius:6px;font-weight:800}.field{margin-bottom:13px}.field label{font-size:12px;font-weight:750;display:block;margin-bottom:6px}
+    .field .help{font-size:11px;color:#75899b;margin-top:5px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+    .table-card{padding:17px}.table-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:13px}.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.filters select{width:auto;min-width:145px}.filters input{width:200px}
+    .tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:750px}th{text-align:left;padding:12px 10px;border-bottom:1px solid #dee7ed;color:#61798b;font-size:11px;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}td{padding:13px 10px;border-bottom:1px solid #eaf0f4}td.num{text-align:right;font-variant-numeric:tabular-nums}th.num{text-align:right}
+    tbody tr:hover{background:#f5f9fc}.place{font-weight:750}.meta{color:#8195a4;font-size:11px;margin-top:3px}.status{font-size:11px;border-radius:20px;padding:5px 8px;font-weight:750;white-space:nowrap;display:inline-block}.ok{color:#146943;background:#e7f7eb}.over{color:#ab4c25;background:#fff1e7}
+    .linkbtn{border:0;color:#087baa;background:transparent;padding:6px 8px;font-weight:750}.muted{color:#7890a2}.empty{padding:45px 12px;text-align:center;color:#73899b}.foot{font-size:12px;color:#708597;margin:18px 0;text-align:center}
+    .leaflet-popup-content{line-height:1.5}.leaflet-popup-content button{margin-top:7px}.fileinput{display:none}.toast{position:fixed;right:20px;bottom:20px;background:#17344a;color:white;border-radius:9px;padding:13px 16px;box-shadow:0 8px 26px #0003;z-index:9999;max-width:370px;display:none}
+    @media(max-width:900px){.controls,.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.main{grid-template-columns:1fr}.side{min-height:0}#map{height:380px}}
+    @media(max-width:520px){.shell{padding:12px}.header{padding:15px}.stat{padding:13px}.stat-val{font-size:23px}.setting{padding:12px}.filters input{width:100%}.filters{width:100%}.filters select{flex:1}.form-grid{gap:8px}}
+  </style>
+</head>
+<body>
+<header class="header"><div><div class="brand">✦ WAY<span>POINT</span></div><div class="sub">Your destinations. Your mileage. Your budget.</div></div><div class="header-actions"><button class="btn ghost" id="exportBtn" type="button">↓ Export GeoJSON</button><button class="btn ghost" id="importBtn" type="button">↑ Import Locations</button><input id="fileInput" class="fileinput" type="file" accept=".geojson,.json,.kml,.csv"></div></header>
+<main class="shell">
+  <div class="topline"><div><h1>Road Trip Cost Planner</h1><div class="hint">Plan every stop at a glance. All costs are round-trip estimates.</div></div><div class="smalltag">FREE PERSONAL PLANNER</div></div>
+  <section class="controls" aria-label="Fuel settings">
+    <div class="card setting"><label for="mpg">Fuel economy · MPG</label><input id="mpg" type="number" min="0.1" max="200" step="0.1" value="10"></div>
+    <div class="card setting"><label for="gas">Gas price · $/gallon</label><input id="gas" type="number" min="0" max="100" step="0.01" value="3.00"></div>
+    <div class="card setting"><label for="budget">Fuel budget · $</label><input id="budget" type="number" min="0" step="1" value="250"></div>
+    <div class="card setting"><label for="tripType">Mileage type</label><select id="tripType"><option value="round">Round-trip mileage</option><option value="oneway">One-way mileage (× 2)</option></select></div>
+  </section>
+  <section class="stats" aria-label="Trip statistics">
+    <div class="card stat"><div class="stat-label">Saved destinations</div><div class="stat-val" id="statDest">0</div><div class="stat-note">On your map</div></div>
+    <div class="card stat"><div class="stat-label">Within fuel budget</div><div class="stat-val" id="statAffordable">0</div><div class="stat-note">Eligible get green markers</div></div>
+    <div class="card stat"><div class="stat-label">Lowest estimated fuel cost</div><div class="stat-val" id="statLowest">—</div><div class="stat-note" id="statLowestName">Add destinations</div></div>
+    <div class="card stat"><div class="stat-label">Median estimated fuel cost</div><div class="stat-val" id="statMedian">—</div><div class="stat-note">Across saved destinations</div></div>
+  </section>
+  <section class="main"><div class="card map-card"><div class="section-head"><h2>Destination map</h2><div class="hint">Click anywhere to add a pin</div></div><div id="map" aria-label="Interactive map for adding trip destinations"></div><div class="map-note">Green = within budget · Orange = over budget. Move a pin by editing its coordinates. Map data © OpenStreetMap contributors.</div></div>
+    <aside class="card side"><div class="section-head" style="padding:0 0 15px"><h2 id="formTitle">Add a destination</h2><button class="linkbtn" id="newBtn" type="button">+ New</button></div>
+      <form id="destinationForm">
+        <div class="field"><label for="name">Destination name *</label><input id="name" required maxlength="120" placeholder="e.g. Palo Duro Canyon State Park"></div>
+        <div class="field"><label for="category">Category</label><select id="category"><option>State park</option><option>National park</option><option>Campground</option><option>Scenic stop</option><option>City</option><option>Other</option></select></div>
+        <div class="field"><label for="mileage">Driving mileage *</label><input id="mileage" type="number" required min="0" step="0.1" placeholder="e.g. 800"><div class="help">Use the mileage type selected above. No automatic routing.</div></div>
+        <div class="form-grid"><div class="field"><label for="lat">Latitude *</label><input id="lat" type="number" required min="-90" max="90" step="any" placeholder="35.1234"></div><div class="field"><label for="lng">Longitude *</label><input id="lng" type="number" required min="-180" max="180" step="any" placeholder="-101.1234"></div></div>
+        <div class="field"><label for="notes">Notes</label><input id="notes" maxlength="300" placeholder="Scenery, campground, ideas..."></div>
+        <div class="form-actions"><button class="btn primary" id="saveBtn" type="submit">Save destination</button><button class="btn" id="cancelBtn" type="button">Clear</button><button class="btn danger" id="deleteBtn" type="button" hidden>Delete</button></div>
+      </form>
+      <p class="hint" style="margin-top:19px">Tip: Zoom to a spot and click the map to fill in its coordinates, then enter a name and estimated mileage. Data is saved locally in this browser.</p>
+    </aside>
+  </section>
+  <section class="card table-card"><div class="table-head"><div><h2 style="margin:0">Destination comparison</h2><div class="hint">Fuel gallons and cost recalculate immediately when settings change.</div></div><div class="filters"><input id="search" type="search" placeholder="Search destinations..." aria-label="Search destinations"><select id="filter" aria-label="Filter by cost"><option value="all">All destinations</option><option value="within">Within budget</option><option value="over">Over budget</option></select><select id="sort" aria-label="Sort destinations"><option value="cost">Lowest cost first</option><option value="costDesc">Highest cost first</option><option value="name">Name A–Z</option><option value="miles">Shortest trip first</option></select></div></div>
+    <div class="tablewrap"><table><thead><tr><th>Destination</th><th class="num">Round trip miles</th><th class="num">Gallons</th><th class="num">Fuel cost</th><th>Budget</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div><p class="hint" style="margin:12px 0 0">Estimates exclude tolls, overnight stays, campsite fees and changes in fuel economy or gas prices along the route.</p></section>
+  <div class="foot">Waypoint is a static, no-account app. Your destinations and settings are stored in your browser only. Export regular backups. <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap attribution</a>.</div>
+</main><div class="toast" role="status" id="toast"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+<script>
+'use strict';
+const STORE = 'waypoint-destinations-v1', SETTINGS = 'waypoint-settings-v1';
+const $=id=>document.getElementById(id);
+const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(n);
+const fmt=n=>new Intl.NumberFormat('en-US',{maximumFractionDigits:1}).format(n);
+function safeText(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function uniqueId(){return typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():String(Date.now())+'-'+Math.random().toString(36).slice(2)}
+let destinations=[],editingId=null,markers;
+try{const data=JSON.parse(localStorage.getItem(STORE)||'[]');if(Array.isArray(data))destinations=data.filter(isValidDestination);}catch(e){console.warn('Destination storage unavailable',e)}
+try{const s=JSON.parse(localStorage.getItem(SETTINGS)||'{}');for(const k of ['mpg','gas','budget','tripType'])if(s[k]!==undefined)$(k).value=s[k];}catch(e){console.warn('Settings storage unavailable',e)}
+function isValidDestination(d){return d&&typeof d.name==='string'&&Number.isFinite(Number(d.lat))&&Math.abs(Number(d.lat))<=90&&Number.isFinite(Number(d.lng))&&Math.abs(Number(d.lng))<=180&&Number.isFinite(Number(d.mileage))&&Number(d.mileage)>=0;}
+function persist(){try{localStorage.setItem(STORE,JSON.stringify(destinations));localStorage.setItem(SETTINGS,JSON.stringify(Object.fromEntries(['mpg','gas','budget','tripType'].map(k=>[k,$(k).value]))));}catch(e){notify('Saving in this browser failed. Export a backup of your data.');}}
+let toastTimer;function notify(message){$('toast').textContent=message;$('toast').style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').style.display='none',4200)}
+const map=L.map('map',{zoomControl:true}).setView([31.1,-99.2],6);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+markers=L.layerGroup().addTo(map);
+map.on('click',e=>{resetForm();$('lat').value=e.latlng.lat.toFixed(6);$('lng').value=e.latlng.lng.toFixed(6);$('name').focus();notify('Coordinates added. Enter destination name and mileage.');});
+function settings(){const mpg=Number($('mpg').value),gas=Number($('gas').value),budget=Number($('budget').value);return {mpg:Number.isFinite(mpg)&&mpg>0?mpg:0,gas:Number.isFinite(gas)&&gas>=0?gas:0,budget:Number.isFinite(budget)&&budget>=0?budget:0,oneWay:$('tripType').value==='oneway'};}
+function calculate(d,s=settings()){let miles=Number(d.mileage)*(s.oneWay?2:1);return {miles,gallons:s.mpg>0?miles/s.mpg:NaN,cost:s.mpg>0?miles/s.mpg*s.gas:NaN};}
+function render(){const s=settings(),costs=destinations.map(d=>({d,...calculate(d,s)})),valid=s.mpg>0;
+$('statDest').textContent=destinations.length;$('statAffordable').textContent=valid?costs.filter(x=>x.cost<=s.budget).length:'—';
+const sorted=costs.filter(x=>Number.isFinite(x.cost)).sort((a,b)=>a.cost-b.cost);
+$('statLowest').textContent=sorted.length?money(sorted[0].cost):'—';$('statLowestName').textContent=sorted.length?sorted[0].d.name:'Add destinations';
+$('statMedian').textContent=sorted.length?money((sorted[Math.floor((sorted.length-1)/2)].cost+sorted[Math.floor(sorted.length/2)].cost)/2):'—';
+const query=$('search').value.trim().toLowerCase(),filter=$('filter').value,order=$('sort').value;
+let visible=costs.filter(x=>(x.d.name+' '+(x.d.category||'')+' '+(x.d.notes||'')).toLowerCase().includes(query) && (filter==='all'||(valid&&(filter==='within'?x.cost<=s.budget:x.cost>s.budget))));
+visible.sort((a,b)=>order==='costDesc'?b.cost-a.cost:order==='name'?a.d.name.localeCompare(b.d.name):order==='miles'?a.miles-b.miles:a.cost-b.cost);
+$('rows').innerHTML=visible.length?visible.map(x=>`<tr><td><div class="place">${safeText(x.d.name)}</div><div class="meta">${safeText(x.d.category||'Other')}</div></td><td class="num">${fmt(x.miles)}</td><td class="num">${valid?fmt(x.gallons):'—'}</td><td class="num"><strong>${valid?money(x.cost):'Set MPG'}</strong></td><td>${valid?`<span class="status ${x.cost<=s.budget?'ok':'over'}">${x.cost<=s.budget?'Within budget':'Over by '+money(x.cost-s.budget)}</span>`:'—'}</td><td><button class="linkbtn" data-edit="${safeText(x.d.id)}" type="button">Edit</button><button class="linkbtn" data-zoom="${safeText(x.d.id)}" type="button">Map</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">No destinations match. Click the map to add your first location.</td></tr>';
+markers.clearLayers();for(const x of costs){const affordable=valid&&x.cost<=s.budget,color=valid?(affordable?'#198a64':'#e87835'):'#487b9b';const marker=L.circleMarker([x.d.lat,x.d.lng],{radius:9,color:'#fff',weight:2,fillColor:color,fillOpacity:1});marker.bindPopup(`<strong>${safeText(x.d.name)}</strong><br>${fmt(x.miles)} round-trip miles<br>${valid?`${fmt(x.gallons)} gallons · ${money(x.cost)}`:'Set a valid MPG'}<br><button class="btn" type="button" data-popup-edit="${safeText(x.d.id)}">Edit destination</button>`);marker.addTo(markers);}
+}
+function resetForm(){$('destinationForm').reset();editingId=null;$('formTitle').textContent='Add a destination';$('saveBtn').textContent='Save destination';$('deleteBtn').hidden=true;}
+function editDestination(id){const d=destinations.find(x=>x.id===id);if(!d)return;editingId=id;for(const k of ['name','category','mileage','lat','lng','notes'])$(k).value=d[k]??'';$('formTitle').textContent='Edit destination';$('saveBtn').textContent='Update destination';$('deleteBtn').hidden=false;if(window.innerWidth<900)$('destinationForm').scrollIntoView({behavior:'smooth',block:'center'});}
+function zoomTo(id){const d=destinations.find(x=>x.id===id);if(d){map.setView([d.lat,d.lng],11);for(const layer of markers.getLayers())if(layer.getLatLng().lat===Number(d.lat)&&layer.getLatLng().lng===Number(d.lng)){layer.openPopup();break;}}}
+$('destinationForm').addEventListener('submit',e=>{e.preventDefault();const d={id:editingId||uniqueId(),name:$('name').value.trim(),category:$('category').value,mileage:Number($('mileage').value),lat:Number($('lat').value),lng:Number($('lng').value),notes:$('notes').value.trim()};if(!d.name||!isValidDestination(d)){notify('Enter a name, valid coordinates, and nonnegative mileage.');return;}const idx=destinations.findIndex(x=>x.id===editingId);if(idx>=0)destinations[idx]=d;else destinations.push(d);persist();render();resetForm();map.setView([d.lat,d.lng],Math.max(map.getZoom(),8));notify('Destination saved in this browser.');});
+$('cancelBtn').addEventListener('click',resetForm);$('newBtn').addEventListener('click',resetForm);
+$('deleteBtn').addEventListener('click',()=>{if(!editingId)return;const d=destinations.find(x=>x.id===editingId);if(d&&confirm(`Delete "${d.name}"?`)){destinations=destinations.filter(x=>x.id!==editingId);persist();render();resetForm();notify('Destination deleted.');}});
+$('rows').addEventListener('click',e=>{const el=e.target.closest('[data-edit],[data-zoom]');if(!el)return;if(el.dataset.edit)editDestination(el.dataset.edit);else zoomTo(el.dataset.zoom);});
+document.addEventListener('click',e=>{const el=e.target.closest('[data-popup-edit]');if(el){editDestination(el.dataset.popupEdit);map.closePopup();}});
+for(const k of ['mpg','gas','budget','tripType'])$(k).addEventListener('input',()=>{persist();render();});for(const k of ['filter','search','sort'])$(k).addEventListener('input',render);
+function download(name,text,mime){const blob=new Blob([text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
+$('exportBtn').addEventListener('click',()=>{const fc={type:'FeatureCollection',properties:{application:'Waypoint',mileageType:$('tripType').value,mpg:Number($('mpg').value),gas:Number($('gas').value),budget:Number($('budget').value)},features:destinations.map(d=>({type:'Feature',geometry:{type:'Point',coordinates:[Number(d.lng),Number(d.lat)]},properties:{name:d.name,category:d.category,mileage:Number(d.mileage),notes:d.notes||''}}))};download('waypoint-destinations.geojson',JSON.stringify(fc,null,2),'application/geo+json');notify('GeoJSON backup exported.');});
+$('importBtn').addEventListener('click',()=>$('fileInput').click());
+function getProp(props,...keys){for(const k of keys){const key=Object.keys(props||{}).find(x=>x.toLowerCase()===k.toLowerCase());if(key!==undefined&&props[key]!==undefined)return props[key];}return undefined;}
+function toDestination(name,lat,lng,props={}){const value=Number(getProp(props,'mileage','miles','round_trip_miles')??0);return {id:uniqueId(),name:String(name||'Imported location').slice(0,120),lat:Number(lat),lng:Number(lng),mileage:Number.isFinite(value)&&value>=0?value:0,category:String(getProp(props,'category')||'Other').slice(0,60),notes:String(getProp(props,'notes','description')||'').slice(0,300)};}
+function fromGeoJSON(parsed){let features=parsed.type==='FeatureCollection'?parsed.features:parsed.type==='Feature'?[parsed]:[];const result=[];for(const f of features){if(f?.geometry?.type!=='Point')continue;const c=f.geometry.coordinates,props=f.properties||{};if(!Array.isArray(c)||c.length<2)continue;result.push(toDestination(getProp(props,'name','title')||'Imported point',c[1],c[0],props));}return result;}
+function fromKML(raw){const xml=new DOMParser().parseFromString(raw,'application/xml');if(xml.getElementsByTagName('parsererror').length)throw Error('Invalid KML XML');const list=[];for(const pm of Array.from(xml.getElementsByTagNameNS('*','Placemark'))){const point=pm.getElementsByTagNameNS('*','Point')[0],coord=point?.getElementsByTagNameNS('*','coordinates')[0]?.textContent?.trim();if(!coord)continue;const [lng,lat]=coord.split(/[,\s]+/).map(Number);const name=pm.getElementsByTagNameNS('*','name')[0]?.textContent||'Imported KML point';const description=pm.getElementsByTagNameNS('*','description')[0]?.textContent||'';list.push(toDestination(name,lat,lng,{description}));}return list;}
+function csvRows(text){const out=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){let c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')quoted=false;else cell+=c;}else if(c==='"')quoted=true;else if(c===','){row.push(cell);cell='';}else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(v=>v!==''))out.push(row);row=[];cell='';}else cell+=c;}row.push(cell);if(row.some(v=>v!==''))out.push(row);return out;}
+function fromCSV(text){const rows=csvRows(text.replace(/^\uFEFF/,''));if(rows.length<2)return[];const heads=rows.shift().map(x=>x.trim().toLowerCase());const col=(r,...names)=>{for(const n of names){const pos=heads.indexOf(n);if(pos>=0)return r[pos];}return undefined;};return rows.map(r=>toDestination(col(r,'name','title','destination'),col(r,'lat','latitude','y'),col(r,'lng','lon','longitude','x'),{mileage:col(r,'mileage','miles','round_trip_miles'),category:col(r,'category'),notes:col(r,'notes','description')}));}
+$('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const raw=await file.text(),ext=file.name.split('.').pop().toLowerCase();const imported=ext==='kml'?fromKML(raw):ext==='csv'?fromCSV(raw):fromGeoJSON(JSON.parse(raw));const valid=imported.filter(isValidDestination);if(!valid.length)throw Error('No valid point locations found. Check the file format and coordinates.');if(!confirm(`Import ${valid.length} location(s)? They will be added to your existing destinations. Imported mileage defaults to 0 when missing.`))return;destinations.push(...valid);persist();render();const bounds=L.latLngBounds(valid.map(d=>[d.lat,d.lng]));map.fitBounds(bounds.pad(.18),{maxZoom:10});notify(`${valid.length} location(s) imported. Edit any missing mileage.`);}catch(err){notify('Import failed: '+err.message);}finally{e.target.value='';}});
+render();if(destinations.length){const bounds=L.latLngBounds(destinations.map(d=>[d.lat,d.lng]));map.fitBounds(bounds.pad(.15),{maxZoom:9});}
+</script>
+</body></html>
