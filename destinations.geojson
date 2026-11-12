@@ -1,4 +1,39 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -97.447989,
+          31.168678
+        ]
+      },
+      "properties": {
+        "id": "22f0cccf-e40e-41ce-bb8a-eb33122eff0e",
+        "name": "Cedar Ridge USACE",
+        "category": "Campground",
+        "mileage": 206,
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.001272,
+          30.656902
+        ]
+      },
+      "properties": {
+        "id": "a28a03e3-4edc-44f6-9b3f-130f707231bd",
+        "name": "Lake Livingston SP",
+        "category": "State park",
+        "mileage": 196.2,
+        "notes": ""
+      }
+    }
+  ]
 }
