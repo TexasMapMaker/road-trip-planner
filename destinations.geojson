@@ -65,7 +65,7 @@
         "id": "33a6cff6-db65-4beb-b2ed-a19b67b9e85b",
         "name": "Fort Clark Springs",
         "category": "Campground",
-        "mileage": 774,
+        "mileage": 598,
         "notes": ""
       }
     },
@@ -82,7 +82,126 @@
         "id": "54cfcd25-f5ae-43a7-ba0f-99db61b07fe6",
         "name": "Lake Mineral Wells SP",
         "category": "State park",
-        "mileage": 746,
+        "mileage": 444,
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -97.737301,
+          30.671755
+        ]
+      },
+      "properties": {
+        "id": "e0d11fcb-f29b-4adb-8bd2-be839c2ab63e",
+        "name": "Cedar Breaks Park USACE",
+        "category": "US Army Corps of Engineers",
+        "mileage": 216,
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -98.871204,
+          30.274353
+        ]
+      },
+      "properties": {
+        "id": "dcd4be4c-26ae-41a4-b6aa-6e095487aace",
+        "name": "Fredericksburg",
+        "category": "City",
+        "mileage": 376,
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -98.369077,
+          30.737432
+        ]
+      },
+      "properties": {
+        "id": "0d9f31bf-b52e-4044-a354-d6aa8ecf367e",
+        "name": "Inks Lake SP",
+        "category": "State park",
+        "mileage": 300,
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -99.14056,
+          30.048241
+        ]
+      },
+      "properties": {
+        "id": "30e8b649-5909-44ec-a380-5185ef8c5ff9",
+        "name": "Kerrville",
+        "category": "City",
+        "mileage": 422,
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -97.722141,
+          30.180755
+        ]
+      },
+      "properties": {
+        "id": "7c0cead4-4450-4202-8217-d0a8fbc3fa1e",
+        "name": "McKinney Falls SP",
+        "category": "State park",
+        "mileage": 224,
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.37737,
+          33.991619
+        ]
+      },
+      "properties": {
+        "id": "5c4d02ab-e173-493f-9dc7-ddfe0854529c",
+        "name": "Durant",
+        "category": "City",
+        "mileage": 572,
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -98.501713,
+          33.900543
+        ]
+      },
+      "properties": {
+        "id": "2590acf2-8b70-4712-b2eb-f3b3df73d9ca",
+        "name": "Wichita Falls",
+        "category": "City",
+        "mileage": 658,
         "notes": ""
       }
     }
